@@ -1,0 +1,4 @@
+workspace
+build_harbour
+*.zip
+.idea

@@ -1,0 +1,9 @@
+services:
+  harbour:
+    build: .
+    container_name: harbour-sdk
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./workspace:/workspace
+    working_dir: /workspace
