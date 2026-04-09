@@ -1,0 +1,164 @@
+# syntax=docker/dockerfile:1
+# ═══════════════════════════════════════════════
+# STAGE 1 — builder  (Ubuntu 18.04 EOL 😈)
+# ═══════════════════════════════════════════════
+FROM ubuntu:18.04 AS builder
+
+LABEL stage="builder" \
+      os="ubuntu-18.04"
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 🔥 REPOS EOL COMPLETOS (evita "package not found")
+RUN \
+    printf 'deb http://archive.ubuntu.com/ubuntu bionic main restricted universe multiverse\n\
+deb http://archive.ubuntu.com/ubuntu bionic-updates main restricted universe multiverse\n\
+deb http://archive.ubuntu.com/ubuntu bionic-security main restricted universe multiverse\n\
+deb http://archive.ubuntu.com/ubuntu bionic-backports main restricted universe multiverse\n' \
+    > /etc/apt/sources.list && \
+
+    # 🔓 Necessário para repositório EOL
+    printf 'Acquire::Check-Valid-Until "false";\n\
+Acquire::Retries "5";\n' \
+    > /etc/apt/apt.conf.d/99insecure && \
+
+    apt-get update && \
+    apt-get install -y --no-install-recommends --fix-missing \
+        build-essential \
+        git \
+        make \
+        gcc \
+        g++ \
+        autoconf \
+        automake \
+        libtool \
+        pkg-config \
+        curl \
+        xvfb \
+        libcurl4-openssl-dev \
+        libcups2-dev \
+        libssl-dev \
+        libpcre3-dev \
+        zlib1g-dev \
+        libbz2-dev \
+        libsqlite3-dev \
+        libpq-dev \
+        libncurses5-dev \
+        libreadline-dev \
+        libxcb1-dev \
+        libx11-dev \
+        libxext-dev \
+        libxrender-dev \
+        libxrandr-dev \
+        libxi-dev \
+        libglu1-mesa-dev \
+        libgl1-mesa-dev \
+        libgtk2.0-dev \
+        libgtk-3-dev \
+        ca-certificates \
+        libmysqlclient-dev && \
+
+    rm -rf /var/lib/apt/lists/*
+
+# 📥 Clona Harbour (última versão disponível no GitHub)
+RUN git clone --depth=1 \
+    https://github.com/harbour/core.git /opt/harbour-core
+
+WORKDIR /opt/harbour-core
+
+# ⚡ Build Harbour com MySQL (18.04)
+RUN make \
+        HB_WITH_CURL=yes \
+        HB_WITH_ZLIB=yes \
+        HB_WITH_BZIP2=yes \
+        HB_WITH_OPENSSL=yes \
+        HB_WITH_PCRE=yes \
+        HB_WITH_CUPS=yes \
+        HB_WITH_SQLITE3=yes \
+        HB_WITH_POSTGRESQL=yes \
+        HB_WITH_PGSQL=yes \
+        HB_WITH_MYSQL=yes \
+        HB_WITH_X11=yes \
+        HB_BUILD_DYN=yes \
+        HB_BUILD_CONTRIBS=yes \
+        HB_BUILD_ALL=yes \
+        -j$(nproc) && \
+    make install
+
+# ═══════════════════════════════════════════════
+# STAGE 2 — runtime  (imagem final enxuta)
+# ═══════════════════════════════════════════════
+FROM ubuntu:18.04 AS runtime
+
+LABEL maintainer="cleiton.leonel@gmail.com" \
+      description="Harbour compiler — Ubuntu 18.04" \
+      org.opencontainers.image.source="https://github.com/harbour/core"
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 🔥 REPOS EOL COMPLETOS (evita "package not found")
+RUN \
+    printf 'deb http://archive.ubuntu.com/ubuntu bionic main restricted universe multiverse\n\
+deb http://archive.ubuntu.com/ubuntu bionic-updates main restricted universe multiverse\n\
+deb http://archive.ubuntu.com/ubuntu bionic-security main restricted universe multiverse\n\
+deb http://archive.ubuntu.com/ubuntu bionic-backports main restricted universe multiverse\n' \
+    > /etc/apt/sources.list && \
+
+    printf 'Acquire::Check-Valid-Until "false";\n\
+Acquire::Retries "5";\n' \
+    > /etc/apt/apt.conf.d/99insecure && \
+
+    apt-get update && \
+    apt-get install -y --no-install-recommends --fix-missing \
+        build-essential \
+        git \
+        make \
+        gcc \
+        g++ \
+        autoconf \
+        automake \
+        libtool \
+        pkg-config \
+        curl \
+        xvfb \
+        libcurl4-openssl-dev \
+        libcups2-dev \
+        libssl-dev \
+        libpcre3-dev \
+        zlib1g-dev \
+        libbz2-dev \
+        libsqlite3-dev \
+        libpq-dev \
+        libncurses5-dev \
+        libreadline-dev \
+        libxcb1-dev \
+        libx11-dev \
+        libxext-dev \
+        libxrender-dev \
+        libxrandr-dev \
+        libxi-dev \
+        libglu1-mesa-dev \
+        libgl1-mesa-dev \
+        libgtk2.0-dev \
+        libgtk-3-dev \
+        ca-certificates \
+        libmysqlclient-dev && \
+
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /usr/local/bin/harbour     /usr/local/bin/
+COPY --from=builder /usr/local/bin/hb*         /usr/local/bin/
+COPY --from=builder /usr/local/lib/harbour     /usr/local/lib/harbour
+COPY --from=builder /usr/local/include/harbour /usr/local/include/harbour
+COPY --from=builder /usr/local/share/harbour   /usr/local/share/harbour
+
+RUN echo "/usr/local/lib/harbour" > /etc/ld.so.conf.d/harbour.conf && ldconfig
+
+# 👤 Usuário sem privilégios
+RUN groupadd --gid 1000 harbour && \
+    useradd --uid 1000 --gid harbour --shell /bin/bash --create-home harbour
+
+ENV PATH="/usr/local/bin:${PATH}"
+
+USER harbour
+WORKDIR /workspace

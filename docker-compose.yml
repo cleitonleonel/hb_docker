@@ -1,9 +1,26 @@
 services:
-  harbour:
-    build: .
-    container_name: harbour-sdk
+  harbour18:
+    build:
+      context: .
+      dockerfile: Dockerfile.18
+      target: runtime
+    container_name: harbour_sdk-18
     stdin_open: true
     tty: true
+    user: "1000:1000"
+    volumes:
+      - ./workspace:/workspace
+    working_dir: /workspace
+
+  harbour22:
+    build:
+      context: .
+      dockerfile: Dockerfile.22
+      target: runtime
+    container_name: harbour_sdk-22
+    stdin_open: true
+    tty: true
+    user: "1000:1000"
     volumes:
       - ./workspace:/workspace
     working_dir: /workspace
