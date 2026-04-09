@@ -1,4 +1,7 @@
 workspace
 build_harbour
+pdv_build.sh
+consulta_build.sh
+pdv_compile.sh
 *.zip
 .idea

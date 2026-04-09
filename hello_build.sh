@@ -1,1 +1,1 @@
-./make.sh consulta xhb.hbc hbcurl.hbc --distro-version 22
+./make.sh hello xhb.hbc hbcurl.hbc --distro-version 22

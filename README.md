@@ -18,10 +18,10 @@ Este repositório contém utilitários para compilar aplicações Harbour dentro
 - `make.sh` — Script principal que gerencia a subida dos containers e a execução da compilação.
 - `docker-compose.yml` — Configuração dos serviços/containers usados durante a compilação (oferece ambientes baseados em Ubuntu 18.04 e 22.04).
 - `Dockerfile.18` / `Dockerfile.22` — Receitas para construção das imagens com as dependências do Harbour e extensões de banco de dados (PostgreSQL, MariaDB, SQLite, etc.) para cada versão do sistema.
-- `install-harbour-wrappers.sh` — Instala atalhos globais no host para os executáveis do Harbour, repassando os comandos para o container via `docker exec`.
+- `scripts/install-harbour-wrappers.sh` — Instala atalhos globais no host para os executáveis do Harbour, repassando os comandos para o container via `docker exec`.
+- `scripts/hbmk2-docker` — Wrapper alternativo simples para executar o `hbmk2` direto no container.
 - `workspace/` — Diretório onde a compilação é executada e os binários são gerados (criado automaticamente e mapeado para dentro do container).
-- `*_build.sh` ou `*_compile.sh` — Exemplos de scripts (como `pdv_build.sh` e `consulta_build.sh`) que automatizam chamadas para o `make.sh`.
-
+- `*_build.sh` ou `*_compile.sh` — Exemplos de scripts (como `pdv_build.sh`, `hello_build.sh` e `consulta_build.sh`) que automatizam chamadas para o `make.sh`.
 ## Como usar
 
 1) Torne o `make.sh` executável (apenas uma vez):
@@ -53,8 +53,8 @@ Você pode escolher compilar em um ambiente baseado no Ubuntu 18.04 passando o p
 ### O que o script faz (resumo):
 
 - Avalia o parâmetro `--distro-version` para decidir qual container (`harbour_sdk-18` ou `harbour_sdk-22`) iniciar.
-- Executa `docker compose up -d` para subir o container correspondente em background.
-- Verifica se os utilitários (`hbmk2`, `hbrun`, etc.) estão no `PATH` do seu host. Caso não estejam, ele invoca o `install-harbour-wrappers.sh` (o que pode pedir sua senha `sudo` para criar os links em `/usr/local/bin/`).
+- Executa `docker compose up -d` (com `--remove-orphans`) para subir o container correspondente em background.
+- Verifica se os utilitários (`hbmk2`, `hbrun`, etc.) estão no `PATH` do seu host. Caso não estejam, ele invoca o `scripts/install-harbour-wrappers.sh` (o que pode pedir sua senha `sudo` para criar os links em `/usr/local/bin/`).
 - Cria e acessa o diretório `workspace/`.
 - Executa o comando de compilação dentro do ambiente: `hbmk2 -static <argumentos_fornecidos>`.
 

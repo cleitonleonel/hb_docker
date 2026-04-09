@@ -48,8 +48,8 @@ done
 # Instalar wrappers apenas se necessário
 if [ "$INSTALL_WRAPPERS" -eq 1 ]; then
     echo "Instalando Harbour wrappers..."
-    chmod +x ./install-harbour-wrappers.sh
-    ./install-harbour-wrappers.sh
+    chmod +x ./scripts/install-harbour-wrappers.sh
+    ./scripts/install-harbour-wrappers.sh
 else
     echo "Harbour wrappers já estão instalados. Pulando etapa."
 fi
