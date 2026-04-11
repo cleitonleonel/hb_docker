@@ -48,6 +48,14 @@ RUN apt-get update && \
 
     rm -rf /var/lib/apt/lists/*
 
+# 🔗 Resolve caminhos Multi-arch (Essencial para Raspberry Pi e arquiteturas ARM)
+# Isso permite que o Harbour encontre dependências como CURL e SSL que ficam em subpastas no ARM.
+RUN if [ "$(gcc -dumpmachine)" != "x86_64-linux-gnu" ]; then \
+        export ARCH_TRIPLET=$(gcc -dumpmachine) && \
+        for d in /usr/include/$ARCH_TRIPLET/*; do ln -s "$d" "/usr/include/$(basename $d)" 2>/dev/null || true; done && \
+        for f in /usr/lib/$ARCH_TRIPLET/*; do ln -s "$f" "/usr/lib/$(basename $f)" 2>/dev/null || true; done; \
+    fi
+
 # 📥 Clona Harbour (última versão disponível no GitHub)
 RUN git clone --depth=1 \
     https://github.com/harbour/core.git /opt/harbour-core
@@ -129,7 +137,9 @@ COPY --from=builder /usr/local/lib/harbour     /usr/local/lib/harbour
 COPY --from=builder /usr/local/include/harbour /usr/local/include/harbour
 COPY --from=builder /usr/local/share/harbour   /usr/local/share/harbour
 
-RUN echo "/usr/local/lib/harbour" > /etc/ld.so.conf.d/harbour.conf && ldconfig
+RUN echo "/usr/local/lib/harbour" > /etc/ld.so.conf.d/harbour.conf && \
+    find /usr/local/lib/harbour -mindepth 1 -type d >> /etc/ld.so.conf.d/harbour.conf && \
+    ldconfig
 
 # 👤 Usuário sem privilégios
 RUN groupadd --gid 1000 harbour && \

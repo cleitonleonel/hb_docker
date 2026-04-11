@@ -67,6 +67,8 @@ fi
 FILE_NAME=$(basename "${ARGS[0]}")
 
 echo "Compilando $FILE_NAME no container $CONTAINER_NAME..."
+
 hbmk2 -static "${ARGS[@]}"
+
 
 echo "Compilação concluída."
